@@ -1,0 +1,5 @@
+{
+  "name": "DJI Photogrammetry Flight Planner v2",
+  "description": "An intuitive web application for generating photogrammetric flight plans and waypoint files for drones like the DJI Mini 4 Pro. Define your survey area on an interactive map, set overlap and altitude parameters, and visualize the flight path before exporting.",
+  "requestFramePermissions": []
+}
