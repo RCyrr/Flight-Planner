@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { MapComponent } from './components/MapComponent';
 import { generateFlightPlan } from './services/flightPlanner';
@@ -61,6 +61,58 @@ const App: React.FC = () => {
   // State for logging
   const [logMessages, setLogMessages] = useState<LogMessage[]>([]);
   const [isLogVisible, setIsLogVisible] = useState(false);
+
+  // States for resizable panel
+  const [panelWidth, setPanelWidth] = useState(384);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const isResizing = useRef(false);
+
+  useEffect(() => {
+      const handleResize = () => {
+          setIsDesktop(window.innerWidth >= 768);
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      isResizing.current = true;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+      if (isResizing.current) {
+          isResizing.current = false;
+          document.body.style.userSelect = '';
+          document.body.style.cursor = '';
+      }
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+      if (isResizing.current) {
+          // Constrain width between 320px and 800px
+          const newWidth = Math.max(320, Math.min(e.clientX, 800));
+          setPanelWidth(newWidth);
+      }
+  }, []);
+
+  useEffect(() => {
+      // We only want to add these listeners on desktop, and clean them up if we switch to mobile
+      if (isDesktop) {
+          document.addEventListener('mousemove', handleMouseMove);
+          document.addEventListener('mouseup', handleMouseUp);
+      } else {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+      }
+
+      return () => {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+      };
+  }, [isDesktop, handleMouseMove, handleMouseUp]);
 
   const addLogMessage = (message: string, type: 'success' | 'error' | 'info') => {
     const newLog: LogMessage = {
@@ -391,29 +443,40 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen font-sans text-white bg-gray-900">
-      <ControlPanel
-        params={flightParams}
-        setParams={setFlightParams}
-        cameraParams={cameraParams}
-        setCameraParams={setCameraParams}
-        displayParams={displayParams}
-        setDisplayParams={setDisplayParams}
-        filterParams={filterParams}
-        setFilterParams={setFilterParams}
-        onGenerate={handleGeneratePlan}
-        onDownloadCsv={handleDownloadCsv}
-        onDownloadKmz={handleDownloadKmz}
-        onDownloadKml={handleDownloadKml}
-        onClear={clearPlan}
-        onFetchTerrain={handleFetchTerrainData}
-        onImportShapefile={handleImportShapefile}
-        isLoading={isLoading}
-        isFetchingTerrain={isFetchingTerrain}
-        error={error}
-        hasPolygon={!!surveyArea && surveyArea.features.length > 0}
-        hasWaypoints={waypoints.length > 0}
-        stats={stats}
+    <div className="flex flex-col md:flex-row h-screen font-sans text-white bg-gray-900 overflow-hidden">
+      <div 
+        className="flex-shrink-0"
+        style={isDesktop ? { width: `${panelWidth}px` } : {}}
+      >
+        <ControlPanel
+          params={flightParams}
+          setParams={setFlightParams}
+          cameraParams={cameraParams}
+          setCameraParams={setCameraParams}
+          displayParams={displayParams}
+          setDisplayParams={setDisplayParams}
+          filterParams={filterParams}
+          setFilterParams={setFilterParams}
+          onGenerate={handleGeneratePlan}
+          onDownloadCsv={handleDownloadCsv}
+          onDownloadKmz={handleDownloadKmz}
+          onDownloadKml={handleDownloadKml}
+          onClear={clearPlan}
+          onFetchTerrain={handleFetchTerrainData}
+          onImportShapefile={handleImportShapefile}
+          isLoading={isLoading}
+          isFetchingTerrain={isFetchingTerrain}
+          error={error}
+          hasPolygon={!!surveyArea && surveyArea.features.length > 0}
+          hasWaypoints={waypoints.length > 0}
+          stats={stats}
+        />
+      </div>
+      <div
+          onMouseDown={handleMouseDown}
+          className="hidden md:block w-2 h-full cursor-col-resize bg-gray-700 hover:bg-indigo-500 transition-colors flex-shrink-0"
+          aria-label="Resize panel"
+          role="separator"
       />
       <main className="flex-grow h-full w-full relative">
         <MapComponent 

@@ -190,7 +190,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const isCustom = selectedPreset === 'Custom';
 
   return (
-    <aside className="w-full md:w-96 bg-gray-800 p-6 overflow-y-auto flex-shrink-0 shadow-lg z-20">
+    <aside className="w-full h-full bg-gray-800 p-6 overflow-y-auto shadow-lg z-20">
       <div className="flex items-center mb-6">
         <DroneIcon />
         <h1 className="text-2xl font-bold ml-3">Flight Planner</h1>
